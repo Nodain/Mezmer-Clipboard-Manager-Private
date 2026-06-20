@@ -12,8 +12,8 @@ param(
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $ReleasePublic = Join-Path $ProjectRoot "release-public"
-$PrivateRemote = "https://github.com/$GitHubUser/Mezmer-Clipboard-Manager.git"
-$PublicRemote = "https://github.com/$GitHubUser/Mezmer-Clipboard-Manager-Releases.git"
+$PrivateRemote = "https://github.com/$GitHubUser/Mezmer-Clipboard-Manager-Private.git"
+$PublicRemote = "https://github.com/$GitHubUser/Mezmer-Clipboard-Manager.git"
 $GitExe = (Get-Command git -ErrorAction Stop).Source
 
 function Invoke-Git {
@@ -133,7 +133,7 @@ if (-not (Test-Path $MsiPath)) {
 if (Get-Command gh -ErrorAction SilentlyContinue) {
     Write-Host "==> Creating GitHub release with gh" -ForegroundColor Cyan
     gh release create "v$Version" `
-        --repo "$GitHubUser/Mezmer-Clipboard-Manager-Releases" `
+        --repo "$GitHubUser/Mezmer-Clipboard-Manager" `
         --title "Mezmer Clipboard $Version" `
         --notes "Windows installer for Mezmer Clipboard." `
         $MsiPath
@@ -141,7 +141,7 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
 } else {
     Write-Host ""
     Write-Host "GitHub CLI (gh) not found. Upload the MSI manually:" -ForegroundColor Yellow
-    Write-Host "  https://github.com/$GitHubUser/Mezmer-Clipboard-Manager-Releases/releases/new"
+    Write-Host "  https://github.com/$GitHubUser/Mezmer-Clipboard-Manager/releases/new"
     Write-Host "  Tag: v$Version"
     Write-Host "  File: $MsiPath"
 }

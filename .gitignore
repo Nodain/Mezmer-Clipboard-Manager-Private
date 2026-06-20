@@ -5,6 +5,9 @@ release-public/artifacts
 .DS_Store
 Thumbs.db
 
+# Internal docs (not for public release repos)
+clipboard_manager.md
+
 # Secrets and local config
 .env
 .env.*
