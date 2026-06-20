@@ -6,7 +6,7 @@ Press **Ctrl+Shift+V** to open the picker (configurable in Settings).
 
 ## Download
 
-Install the latest version from **[Releases](https://github.com/Nodain/Mesmer-Clipboard-Manager-Releases/releases)**.
+Install the latest version from **[Releases](https://github.com/Nodain/Mezmer-Clipboard-Manager-Releases/releases)**.
 
 
 | File                         | Description                     |

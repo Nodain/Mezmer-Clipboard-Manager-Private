@@ -40,7 +40,7 @@ Write-Host "  Staged: $DestPath" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
 Write-Host "  1. Bump version in src-tauri/tauri.conf.json + package.json when ready for a new release."
-Write-Host "  2. Open GitHub -> Mesmer-Clipboard-Manager-Releases -> Releases -> Draft new release"
+Write-Host "  2. Open GitHub -> Mezmer-Clipboard-Manager-Releases -> Releases -> Draft new release"
 Write-Host "  3. Tag: v$Version"
 Write-Host "  4. Upload: $DestName"
 Write-Host "  5. Publish (do not commit the .msi to git)"

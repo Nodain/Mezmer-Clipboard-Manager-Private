@@ -1,4 +1,4 @@
-# Mesmer Clipboard Manager
+# Mezmer Clipboard Manager
 
 Local-first Windows clipboard manager with optional pairing to Mezmer Desktop.
 
