@@ -1,0 +1,5 @@
+# Installers are uploaded to GitHub Releases — do not commit them.
+artifacts/
+*.msi
+*.exe
+*.zip

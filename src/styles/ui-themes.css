@@ -1,0 +1,42 @@
+:root,
+[data-ui-theme="default"] {
+  --mezmer-radius-sm: 6px;
+  --mezmer-radius-md: 8px;
+  --mezmer-radius-lg: 10px;
+  --clipboard-window-radius: 10px;
+  --mezmer-popup-bg: #191a1c;
+  --mezmer-popup-blur: 12px;
+  --mezmer-popup-bg-mix: 88%;
+  --mezmer-popup-shadow: 0 8px 32px rgb(0 0 0 / 35%);
+  --mezmer-border-mix: 55%;
+  --mezmer-border-mix-soft: 45%;
+  --mezmer-border-mix-faint: 38%;
+  --mezmer-scrollbar-size: 8px;
+  --mezmer-scrollbar-thumb: #424242;
+  --color-panel: #1a1a1a;
+  --color-panel-2: #1f1f1f;
+  --color-elevated: #262626;
+  --color-input: #1f1f1f;
+}
+
+[data-ui-theme="sleek"] {
+  --mezmer-radius-sm: 8px;
+  --mezmer-radius-md: 10px;
+  --mezmer-radius-lg: 12px;
+  --clipboard-window-radius: 10px;
+  --mezmer-popup-bg: #191a1c;
+  --mezmer-popup-blur: 20px;
+  --mezmer-popup-bg-mix: 76%;
+  --mezmer-popup-shadow:
+    0 1px 0 rgb(255 255 255 / 4%) inset,
+    0 16px 48px rgb(0 0 0 / 48%);
+  --mezmer-border-mix: 38%;
+  --mezmer-border-mix-soft: 32%;
+  --mezmer-border-mix-faint: 26%;
+  --mezmer-scrollbar-size: 6px;
+  --mezmer-scrollbar-thumb: #3a3a3d;
+  --color-panel: #1a1a1a;
+  --color-panel-2: #1e1e1e;
+  --color-elevated: #242424;
+  --color-input: #171717;
+}

@@ -1,0 +1,25 @@
+node_modules
+dist
+src-tauri/target
+release-public/artifacts
+.DS_Store
+Thumbs.db
+
+# Secrets and local config
+.env
+.env.*
+*.local
+credentials.json
+*.pem
+*.key
+
+# IDE / OS
+.idea
+.vscode
+*.swp
+*.suo
+*.user
+
+# Logs and debug
+*.log
+npm-debug.log*
