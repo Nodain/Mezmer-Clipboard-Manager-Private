@@ -110,6 +110,22 @@ if ($ForcePublicClean) {
         ) -WorkDir $staging
         Invoke-Git -Args @("remote", "add", "origin", $PublicUrl) -WorkDir $staging
         Invoke-Git -Args @("push", "-u", "origin", "main", "--force") -WorkDir $staging
+
+        $tagLines = & $GitExe ls-remote --tags $PublicUrl 2>$null
+        if ($tagLines) {
+            $tagsToDelete = @()
+            foreach ($line in $tagLines) {
+                if ($line -match 'refs/tags/([^\^]+)$') {
+                    $tagsToDelete += $Matches[1]
+                }
+            }
+            $tagsToDelete = $tagsToDelete | Select-Object -Unique
+            foreach ($tag in $tagsToDelete) {
+                Write-Host "  Removing public tag: $tag" -ForegroundColor DarkGray
+                Invoke-Git -Args @("push", "origin", ":refs/tags/$tag") -WorkDir $staging
+            }
+        }
+
         Write-Host "Public repo cleaned. Only README.md and .gitignore remain on main." -ForegroundColor Green
     } finally {
         Remove-Item -Recurse -Force $staging -ErrorAction SilentlyContinue

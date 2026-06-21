@@ -57,7 +57,7 @@ if ($LASTEXITCODE -ne 0) {
     git -c user.name=$GitName -c user.email=$GitEmail commit -m "Update public release page"
 }
 git branch -M main
-git push -u origin main
+git push -u origin main --force
 if ($LASTEXITCODE -ne 0) { throw "Public push failed." }
 
 Write-Host "Public README pushed (no source)." -ForegroundColor Green
