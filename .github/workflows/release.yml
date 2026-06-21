@@ -1,0 +1,167 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+env:
+  PUBLIC_RELEASE_REPO: Nodain/Mezmerize
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            name: linux
+          - os: macos-latest
+            name: macos
+          - os: windows-latest
+            name: windows
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Linux dependencies
+        if: matrix.name == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            libayatana-appindicator3-dev
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        run: npm run tauri build
+        env:
+          CI: true
+
+      - name: Collect Linux bundles
+        if: matrix.name == 'linux'
+        shell: bash
+        run: |
+          mkdir -p release-artifacts
+          shopt -s nullglob
+          for f in src-tauri/target/release/bundle/deb/*.deb; do cp "$f" release-artifacts/; done
+          for f in src-tauri/target/release/bundle/appimage/*.AppImage; do cp "$f" release-artifacts/; done
+          ls -la release-artifacts/
+
+      - name: Collect macOS bundles
+        if: matrix.name == 'macos'
+        shell: bash
+        run: |
+          mkdir -p release-artifacts
+          shopt -s nullglob
+          for f in src-tauri/target/release/bundle/dmg/*.dmg; do cp "$f" release-artifacts/; done
+          ls -la release-artifacts/
+
+      - name: Collect Windows bundles
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release-artifacts | Out-Null
+          Get-ChildItem src-tauri/target/release/bundle/msi/*.msi | Copy-Item -Destination release-artifacts/
+          Get-ChildItem release-artifacts
+
+      - name: Upload bundle artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundles-${{ matrix.name }}
+          path: release-artifacts/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish to GitHub Releases
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all bundles
+        uses: actions/download-artifact@v4
+        with:
+          path: all-bundles
+          pattern: bundles-*
+          merge-multiple: true
+
+      - name: List release files
+        run: ls -la all-bundles/
+
+      - name: Resolve release tag
+        id: tag
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            VERSION=$(node -pe "JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json','utf8')).version")
+            echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_RELEASE_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          PUBLIC_REPO: ${{ env.PUBLIC_RELEASE_REPO }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "Missing GH_RELEASE_TOKEN secret (needs repo scope on $PUBLIC_REPO)."
+            exit 1
+          fi
+
+          VERSION="${TAG#v}"
+          NOTES=$(mktemp)
+          cat > "$NOTES" <<EOF
+          ## Mezmerize ${VERSION}
+
+          - Windows: \`.msi\`
+          - Linux: \`.deb\` and \`.AppImage\`
+          - macOS: \`.dmg\` (Apple Silicon)
+
+          See the public README for platform-specific feature notes.
+          EOF
+
+          if ! gh release view "$TAG" --repo "$PUBLIC_REPO" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --repo "$PUBLIC_REPO" \
+              --title "Mezmerize ${VERSION}" \
+              --notes-file "$NOTES"
+          fi
+
+          gh release upload "$TAG" \
+            --repo "$PUBLIC_REPO" \
+            --clobber \
+            all-bundles/*
+
+          echo "Published: https://github.com/${PUBLIC_REPO}/releases/tag/${TAG}"
