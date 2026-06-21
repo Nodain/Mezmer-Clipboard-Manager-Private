@@ -48,10 +48,6 @@ function mixHex(a: string, b: string, t: number): string {
   );
 }
 
-function lighten(hex: string, amount: number): string {
-  return mixHex(hex, "#ffffff", amount);
-}
-
 function darken(hex: string, amount: number): string {
   return mixHex(hex, "#000000", amount);
 }
