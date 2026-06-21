@@ -101,7 +101,10 @@ fn position_hud_hwnd(hwnd: isize, offset: (i32, i32), cursor_x: i32, cursor_y: i
 
 fn eyedropper_loop(app: AppHandle) {
     let window = app.get_webview_window("eyedropper");
+    #[cfg(windows)]
     let hwnd = window.as_ref().and_then(|w| w.hwnd().ok()).map(|h| h.0 as isize);
+    #[cfg(not(windows))]
+    let hwnd: Option<isize> = None;
     let offset = window
         .as_ref()
         .and_then(|w| hud_offset(w).ok())
