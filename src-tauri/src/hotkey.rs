@@ -3,8 +3,12 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 use crate::{hide_picker_window, show_picker_window};
 
-pub const DEFAULT_PICKER_HOTKEY: &str = "control+shift+KeyV";
 pub const WIN_V_PICKER_HOTKEY: &str = "super+KeyV";
+
+#[cfg(target_os = "macos")]
+pub const DEFAULT_PICKER_HOTKEY: &str = "super+shift+KeyV";
+#[cfg(not(target_os = "macos"))]
+pub const DEFAULT_PICKER_HOTKEY: &str = "control+shift+KeyV";
 
 pub fn normalize_hotkey(value: &str) -> Result<String, String> {
     let shortcut: Shortcut = value
@@ -53,7 +57,7 @@ pub fn register_picker_hotkey(app: &AppHandle, hotkey: &str) -> Result<(), Strin
         let msg = e.to_string();
         if msg.contains("already registered") {
             format!(
-                "Shortcut \"{hotkey}\" is already in use. Quit other Mezmer Clipboard instances or choose a different shortcut in Settings."
+                "Shortcut \"{hotkey}\" is already in use. Quit other Mezmerize instances or choose a different shortcut in Settings."
             )
         } else {
             msg

@@ -4,6 +4,9 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_MAX_HISTORY: i64 = 200;
+#[cfg(target_os = "macos")]
+pub const DEFAULT_PICKER_HOTKEY: &str = "super+shift+KeyV";
+#[cfg(not(target_os = "macos"))]
 pub const DEFAULT_PICKER_HOTKEY: &str = "control+shift+KeyV";
 pub const DEFAULT_NAV_PREV_KEY: &str = "ArrowLeft";
 pub const DEFAULT_NAV_NEXT_KEY: &str = "ArrowRight";
@@ -14,6 +17,11 @@ pub const DEFAULT_THEME_ACCENT: &str = "#7e5ed7";
 pub const DEFAULT_THEME_BORDER: &str = "#262626";
 pub const DEFAULT_THEME_VIEW_BG: &str = "#141414";
 pub const DEFAULT_THEME_PANEL: &str = "#1a1a1a";
+pub const DEFAULT_THEME_TEXT: &str = "#ececec";
+pub const DEFAULT_THEME_MUTED: &str = "#8a8a8c";
+pub const DEFAULT_THEME_FAINT: &str = "#656568";
+pub const DEFAULT_THEME_INPUT: &str = "#171717";
+pub const DEFAULT_THEME_ELEVATED: &str = "#242424";
 
 pub const DEFAULT_LIST_IMAGE_PREVIEW_HEIGHT: i64 = 220;
 pub const MIN_LIST_IMAGE_PREVIEW_HEIGHT: i64 = 80;
@@ -26,6 +34,36 @@ pub struct ThemeSettings {
     pub border: String,
     pub view_bg: String,
     pub panel: String,
+    #[serde(default = "default_theme_text")]
+    pub text: String,
+    #[serde(default = "default_theme_muted")]
+    pub muted: String,
+    #[serde(default = "default_theme_faint")]
+    pub faint: String,
+    #[serde(default = "default_theme_input")]
+    pub input: String,
+    #[serde(default = "default_theme_elevated")]
+    pub elevated: String,
+}
+
+fn default_theme_text() -> String {
+    DEFAULT_THEME_TEXT.to_string()
+}
+
+fn default_theme_muted() -> String {
+    DEFAULT_THEME_MUTED.to_string()
+}
+
+fn default_theme_faint() -> String {
+    DEFAULT_THEME_FAINT.to_string()
+}
+
+fn default_theme_input() -> String {
+    DEFAULT_THEME_INPUT.to_string()
+}
+
+fn default_theme_elevated() -> String {
+    DEFAULT_THEME_ELEVATED.to_string()
 }
 
 impl Default for ThemeSettings {
@@ -35,6 +73,11 @@ impl Default for ThemeSettings {
             border: DEFAULT_THEME_BORDER.to_string(),
             view_bg: DEFAULT_THEME_VIEW_BG.to_string(),
             panel: DEFAULT_THEME_PANEL.to_string(),
+            text: DEFAULT_THEME_TEXT.to_string(),
+            muted: DEFAULT_THEME_MUTED.to_string(),
+            faint: DEFAULT_THEME_FAINT.to_string(),
+            input: DEFAULT_THEME_INPUT.to_string(),
+            elevated: DEFAULT_THEME_ELEVATED.to_string(),
         }
     }
 }
@@ -60,6 +103,7 @@ pub struct AppSettings {
     pub picker_nav_next_key: String,
     pub picker_copy_key: String,
     pub picker_close_key: String,
+    pub klipy_api_key: String,
 }
 
 impl Default for AppSettings {
@@ -83,6 +127,7 @@ impl Default for AppSettings {
             picker_nav_next_key: DEFAULT_NAV_NEXT_KEY.to_string(),
             picker_copy_key: DEFAULT_COPY_KEY.to_string(),
             picker_close_key: DEFAULT_CLOSE_KEY.to_string(),
+            klipy_api_key: String::new(),
         }
     }
 }
@@ -124,6 +169,7 @@ fn normalize_clip_filter(value: Option<String>) -> String {
         Some("pinned") | Some("text") | Some("image") | Some("color") => {
             value.unwrap()
         }
+        Some("snippet") => "text".to_string(),
         _ => "text".to_string(),
     }
 }
@@ -197,6 +243,21 @@ fn get_theme(conn: &Connection) -> Result<ThemeSettings, String> {
         panel: get_raw(conn, "theme_panel")?
             .map(|v| normalize_hex(&v, &defaults.panel))
             .unwrap_or(defaults.panel),
+        text: get_raw(conn, "theme_text")?
+            .map(|v| normalize_hex(&v, &defaults.text))
+            .unwrap_or(defaults.text),
+        muted: get_raw(conn, "theme_muted")?
+            .map(|v| normalize_hex(&v, &defaults.muted))
+            .unwrap_or(defaults.muted),
+        faint: get_raw(conn, "theme_faint")?
+            .map(|v| normalize_hex(&v, &defaults.faint))
+            .unwrap_or(defaults.faint),
+        input: get_raw(conn, "theme_input")?
+            .map(|v| normalize_hex(&v, &defaults.input))
+            .unwrap_or(defaults.input),
+        elevated: get_raw(conn, "theme_elevated")?
+            .map(|v| normalize_hex(&v, &defaults.elevated))
+            .unwrap_or(defaults.elevated),
     })
 }
 
@@ -247,6 +308,7 @@ pub fn get_settings(conn: &Connection) -> Result<AppSettings, String> {
     let picker_close_key = get_raw(conn, "picker_close_key")?
         .map(|v| normalize_nav_key(&v, DEFAULT_CLOSE_KEY))
         .unwrap_or_else(|| DEFAULT_CLOSE_KEY.to_string());
+    let klipy_api_key = get_raw(conn, "klipy_api_key")?.unwrap_or_default();
     Ok(AppSettings {
         max_history,
         mezmer_pairing_enabled,
@@ -266,6 +328,7 @@ pub fn get_settings(conn: &Connection) -> Result<AppSettings, String> {
         picker_nav_next_key,
         picker_copy_key,
         picker_close_key,
+        klipy_api_key,
     })
 }
 
@@ -276,6 +339,11 @@ pub fn set_settings(conn: &Connection, settings: &AppSettings) -> Result<(), Str
         border: normalize_hex(&settings.theme.border, &defaults.border),
         view_bg: normalize_hex(&settings.theme.view_bg, &defaults.view_bg),
         panel: normalize_hex(&settings.theme.panel, &defaults.panel),
+        text: normalize_hex(&settings.theme.text, &defaults.text),
+        muted: normalize_hex(&settings.theme.muted, &defaults.muted),
+        faint: normalize_hex(&settings.theme.faint, &defaults.faint),
+        input: normalize_hex(&settings.theme.input, &defaults.input),
+        elevated: normalize_hex(&settings.theme.elevated, &defaults.elevated),
     };
 
     set_raw(conn, "max_history", &settings.max_history.max(1).to_string())?;
@@ -301,6 +369,11 @@ pub fn set_settings(conn: &Connection, settings: &AppSettings) -> Result<(), Str
     set_raw(conn, "theme_border", &theme.border)?;
     set_raw(conn, "theme_view_bg", &theme.view_bg)?;
     set_raw(conn, "theme_panel", &theme.panel)?;
+    set_raw(conn, "theme_text", &theme.text)?;
+    set_raw(conn, "theme_muted", &theme.muted)?;
+    set_raw(conn, "theme_faint", &theme.faint)?;
+    set_raw(conn, "theme_input", &theme.input)?;
+    set_raw(conn, "theme_elevated", &theme.elevated)?;
     set_raw(conn, "picker_hotkey", &settings.picker_hotkey)?;
     match settings.windows_clipboard_history_backup {
         Some(v) => set_raw(conn, "win_clipboard_hist_backup", &v.to_string())?,
@@ -397,6 +470,7 @@ pub fn set_settings(conn: &Connection, settings: &AppSettings) -> Result<(), Str
     }
     set_raw(conn, "picker_copy_key", &picker_copy_key)?;
     set_raw(conn, "picker_close_key", &picker_close_key)?;
+    set_raw(conn, "klipy_api_key", settings.klipy_api_key.trim())?;
     Ok(())
 }
 
@@ -417,7 +491,15 @@ pub fn get_picker_position(conn: &Connection) -> Result<Option<PickerPosition>, 
     }
 }
 
-const PICKER_POSITIONS_BY_MONITOR_KEY: &str = "picker_positions_by_monitor";
+const PICKER_POSITIONS_BY_MONITOR_LEGACY_KEY: &str = "picker_positions_by_monitor";
+
+fn picker_positions_storage_key(carousel: bool) -> &'static str {
+    if carousel {
+        "picker_carousel_positions_by_monitor"
+    } else {
+        "picker_list_positions_by_monitor"
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct PickerPositionEntry {
@@ -425,28 +507,32 @@ struct PickerPositionEntry {
     y: i32,
 }
 
-fn load_picker_positions_by_monitor(
+fn load_picker_positions_map(
     conn: &Connection,
+    storage_key: &str,
 ) -> Result<HashMap<String, PickerPositionEntry>, String> {
-    match get_raw(conn, PICKER_POSITIONS_BY_MONITOR_KEY)? {
+    match get_raw(conn, storage_key)? {
         Some(json) => serde_json::from_str(&json).map_err(|e| e.to_string()),
         None => Ok(HashMap::new()),
     }
 }
 
-fn save_picker_positions_by_monitor(
+fn save_picker_positions_map(
     conn: &Connection,
+    storage_key: &str,
     map: &HashMap<String, PickerPositionEntry>,
 ) -> Result<(), String> {
     let json = serde_json::to_string(map).map_err(|e| e.to_string())?;
-    set_raw(conn, PICKER_POSITIONS_BY_MONITOR_KEY, &json)
+    set_raw(conn, storage_key, &json)
 }
 
 pub fn get_picker_position_for_monitor(
     conn: &Connection,
     monitor_key: &str,
+    carousel: bool,
 ) -> Result<Option<PickerPosition>, String> {
-    let map = load_picker_positions_by_monitor(conn)?;
+    let storage_key = picker_positions_storage_key(carousel);
+    let map = load_picker_positions_map(conn, storage_key)?;
     if let Some(entry) = map.get(monitor_key) {
         return Ok(Some(PickerPosition {
             x: entry.x,
@@ -454,9 +540,18 @@ pub fn get_picker_position_for_monitor(
         }));
     }
 
-    // One-time fallback for installs that only have the legacy global position.
-    if map.is_empty() {
-        return get_picker_position(conn);
+    // One-time fallback for installs that only have the legacy unified map.
+    if !carousel {
+        let legacy = load_picker_positions_map(conn, PICKER_POSITIONS_BY_MONITOR_LEGACY_KEY)?;
+        if let Some(entry) = legacy.get(monitor_key) {
+            return Ok(Some(PickerPosition {
+                x: entry.x,
+                y: entry.y,
+            }));
+        }
+        if legacy.is_empty() && map.is_empty() {
+            return get_picker_position(conn);
+        }
     }
 
     Ok(None)
@@ -465,16 +560,17 @@ pub fn get_picker_position_for_monitor(
 pub fn set_picker_position_for_monitor(
     conn: &Connection,
     monitor_key: &str,
+    carousel: bool,
     x: i32,
     y: i32,
 ) -> Result<(), String> {
-    let mut map = load_picker_positions_by_monitor(conn)?;
+    let storage_key = picker_positions_storage_key(carousel);
+    let mut map = load_picker_positions_map(conn, storage_key)?;
     map.insert(
         monitor_key.to_string(),
         PickerPositionEntry { x, y },
     );
-    save_picker_positions_by_monitor(conn, &map)?;
-    Ok(())
+    save_picker_positions_map(conn, storage_key, &map)
 }
 
 #[derive(Debug, Clone, Copy)]

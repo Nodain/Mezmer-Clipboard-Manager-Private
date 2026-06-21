@@ -252,7 +252,7 @@ pub fn place_picker_window(window: &WebviewWindow, app: &AppHandle) -> Result<()
     let saved = {
         let state = app.state::<AppState>();
         let conn = state.conn.lock().map_err(|e| e.to_string())?;
-        settings::get_picker_position_for_monitor(&conn, &key)?
+        settings::get_picker_position_for_monitor(&conn, &key, carousel)?
     };
 
     if let Some(pos) = saved {
@@ -288,11 +288,12 @@ pub fn persist_picker_position(
     x: i32,
     y: i32,
 ) -> Result<(), String> {
+    let carousel = picker_carousel_mode(app);
     let monitor = monitor_for_window(window, x, y).ok_or("no display found")?;
     let key = monitor_key(&monitor);
     let state = app.state::<AppState>();
     let conn = state.conn.lock().map_err(|e| e.to_string())?;
-    settings::set_picker_position_for_monitor(&conn, &key, x, y)
+    settings::set_picker_position_for_monitor(&conn, &key, carousel, x, y)
 }
 
 pub fn configure_settings_resize_limits(window: &WebviewWindow) -> Result<(), String> {

@@ -1,20 +1,20 @@
-# Mezmer Clipboard Manager
+# Mezmerize
 
 Local-first Windows clipboard manager with optional pairing to Mezmer Desktop.
 
 Copy text, images, URLs, and file paths into a searchable history. Press **Ctrl+Shift+V** to open the picker. Everything stays on disk in SQLite — no account, no cloud.
 
-## Mezmer pairing (optional)
+## Mezmer Desktop pairing (optional)
 
-When enabled under **Settings → Mezmer pairing**, you can send **image** and **URL** clips to your Mezmer library via the localhost bridge.
+When enabled under **Settings → Mezmer Desktop pairing**, you can send **image** and **URL** clips to your Mezmer Desktop library via the localhost bridge.
 
 ### Requirements
 
-1. **Mezmer** must be running.
-2. In Mezmer, open **Settings → Extension** and turn on **Link to Mezmer browser extension** (this starts the HTTP server).
+1. **Mezmer Desktop** must be running.
+2. In Mezmer Desktop, open **Settings → Extension** and turn on **Link to Mezmer browser extension** (this starts the HTTP server).
 3. The bridge listens at `http://127.0.0.1:47832`.
 
-If Mezmer is closed or the extension toggle is off, the clipboard app shows **Disconnected** and continues working standalone.
+If Mezmer Desktop is closed or the extension toggle is off, Mezmerize shows **Disconnected** and continues working standalone.
 
 ### API endpoints used
 

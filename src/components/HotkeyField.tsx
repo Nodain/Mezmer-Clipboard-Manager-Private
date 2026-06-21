@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  DEFAULT_PICKER_HOTKEY,
+  defaultPickerHotkey,
   eventToHotkey,
   formatHotkey,
   isWindowsClipboardHotkey,
   WIN_V_PICKER_HOTKEY,
 } from "../lib/hotkey";
+import { defaultHotkeyLabel, isWindows } from "../lib/platform";
 
 export function HotkeyField({
   value,
@@ -18,6 +19,7 @@ export function HotkeyField({
 }) {
   const [recording, setRecording] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const defaultHotkey = defaultPickerHotkey();
 
   useEffect(() => {
     if (!recording) return;
@@ -50,6 +52,11 @@ export function HotkeyField({
 
   return (
     <div className="space-y-2 px-0.5">
+      <p className="text-[11px] leading-relaxed t-muted">
+        Default shortcut is{" "}
+        <span className="t-text">{defaultHotkeyLabel()}</span>. On Windows you
+        can optionally replace the system clipboard with Win+V.
+      </p>
       <div className="flex items-center gap-2">
         <button
           ref={buttonRef}
@@ -64,34 +71,38 @@ export function HotkeyField({
         >
           {recording ? "Press shortcut…" : formatHotkey(value)}
         </button>
+        {isWindows() ? (
+          <button
+            type="button"
+            disabled={disabled || value === WIN_V_PICKER_HOTKEY}
+            onClick={() => onChange(WIN_V_PICKER_HOTKEY)}
+            className="shrink-0 rounded-[var(--mezmer-radius-sm)] border border-[var(--color-border-soft)] px-2.5 py-2 text-[10px] font-medium t-muted transition hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40"
+            title="Disable Windows clipboard history and use Win + V for Mezmerize"
+          >
+            Win + V
+          </button>
+        ) : null}
         <button
           type="button"
-          disabled={disabled || value === WIN_V_PICKER_HOTKEY}
-          onClick={() => onChange(WIN_V_PICKER_HOTKEY)}
-          className="shrink-0 rounded-[var(--mezmer-radius-sm)] border border-[var(--color-border-soft)] px-2.5 py-2 text-[10px] font-medium t-muted transition hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40"
-          title="Disable Windows clipboard history and use Win + V for Mezmer"
-        >
-          Win + V
-        </button>
-        <button
-          type="button"
-          disabled={disabled || value === DEFAULT_PICKER_HOTKEY}
-          onClick={() => onChange(DEFAULT_PICKER_HOTKEY)}
+          disabled={disabled || value === defaultHotkey}
+          onClick={() => onChange(defaultHotkey)}
           className="shrink-0 rounded-[var(--mezmer-radius-sm)] border border-[var(--color-border-soft)] px-2.5 py-2 text-[10px] font-medium t-muted transition hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Reset
+          {defaultHotkeyLabel()}
         </button>
       </div>
       {winV ? (
         <p className="text-[10px] leading-relaxed t-muted">
-          Mezmer turns off Windows clipboard history, blocks Win + V in File
+          Mezmerize turns off Windows clipboard history, blocks Win + V in File
           Explorer, and restarts Explorer once so the shortcut is free. Your
           previous Windows setting is restored if you switch back.
         </p>
       ) : (
         <p className="text-[10px] t-faint">
-          Click the field, then press your shortcut. Esc cancels. On Windows,
-          use the Win + V button — the Win key cannot be recorded here.
+          Click the field, then press your shortcut. Esc cancels.
+          {isWindows()
+            ? " Use the Win + V button — the Win key cannot be recorded here."
+            : null}
         </p>
       )}
     </div>

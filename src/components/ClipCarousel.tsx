@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useClipThumb } from "../hooks/useClipThumb";
+import { usePinnedDeleteConfirm } from "../hooks/usePinnedDeleteConfirm";
 import type { ClipRecord, CopyMode } from "../lib/types";
 import { IconChevronLeft, IconChevronRight, IconImage, IconPin, IconTrash } from "./icons";
 
@@ -36,18 +37,35 @@ function CarouselCard({
 }) {
   const isImage = clip.kind === "image";
   const thumb = useClipThumb(clip.id, isImage);
+  const { confirming, requestDelete, cancelDelete } = usePinnedDeleteConfirm(
+    clip.id,
+    clip.pinned,
+    onDelete,
+  );
+
+  const cardClassName = [
+    "clipboard-carousel-card",
+    active ? "clipboard-carousel-card--active" : "",
+    confirming ? "clipboard-carousel-card--delete-confirm" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <article
       ref={cardRef}
       data-no-drag
-      className={`clipboard-carousel-card ${active ? "clipboard-carousel-card--active" : ""}`}
+      className={cardClassName}
       style={{ width, minWidth: width }}
     >
       <button
         type="button"
         className="clipboard-carousel-card-main"
         onClick={() => {
+          if (confirming) {
+            cancelDelete();
+            return;
+          }
           if (active) onCopy();
           else onSelect();
         }}
@@ -81,7 +99,11 @@ function CarouselCard({
           </div>
         )}
         <p className="clipboard-carousel-card-preview truncate text-[11px] font-medium t-text">
-          {clip.preview}
+          {confirming ? (
+            <span className="clipboard-delete-confirm-label">Are You Sure?</span>
+          ) : (
+            clip.preview
+          )}
         </p>
       </button>
       <div className="clipboard-carousel-card-meta-actions">
@@ -91,6 +113,7 @@ function CarouselCard({
           className={`clipboard-carousel-icon-btn${clip.pinned ? " clipboard-carousel-icon-btn--pinned" : ""}`}
           onClick={(e) => {
             e.stopPropagation();
+            cancelDelete();
             onPin();
           }}
         >
@@ -98,11 +121,11 @@ function CarouselCard({
         </button>
         <button
           type="button"
-          title="Delete"
-          className="clipboard-carousel-icon-btn clipboard-carousel-icon-btn--delete"
+          title={confirming ? "Confirm delete" : "Delete"}
+          className={`clipboard-carousel-icon-btn clipboard-carousel-icon-btn--delete${confirming ? " clipboard-carousel-icon-btn--delete-confirm" : ""}`}
           onClick={(e) => {
             e.stopPropagation();
-            onDelete();
+            requestDelete();
           }}
         >
           <IconTrash size={15} />

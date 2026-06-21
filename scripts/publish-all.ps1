@@ -13,7 +13,7 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $ReleasePublic = Join-Path $ProjectRoot "release-public"
 $PrivateRemote = "https://github.com/$GitHubUser/Mezmer-Clipboard-Manager-Private.git"
-$PublicRemote = "https://github.com/$GitHubUser/Mezmer-Clipboard-Manager.git"
+$PublicRemote = "https://github.com/$GitHubUser/Mezmerize.git"
 $GitExe = (Get-Command git -ErrorAction Stop).Source
 
 function Invoke-Git {
@@ -105,7 +105,7 @@ Write-Host "==> Step 3: Private repo (full source)" -ForegroundColor Cyan
 Push-Repo `
     -WorkDir $ProjectRoot `
     -AddPaths @(".") `
-    -CommitMessage "Prepare Mezmer Clipboard for release" `
+    -CommitMessage "Prepare Mezmerize for release" `
     -RemoteUrl $PrivateRemote
 
 Write-Host "==> Step 4: Public repo (README only)" -ForegroundColor Cyan
@@ -125,7 +125,7 @@ if (-not $SkipBuild) {
 
 $TauriConf = Get-Content (Join-Path $ProjectRoot "src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json
 $Version = $TauriConf.version
-$MsiPath = Join-Path $ReleasePublic "artifacts\Mezmer-Clipboard-$Version-x64.msi"
+$MsiPath = Join-Path $ReleasePublic "artifacts\Mezmerize-$Version-x64.msi"
 if (-not (Test-Path $MsiPath)) {
     throw "Expected MSI not found: $MsiPath"
 }
@@ -133,15 +133,15 @@ if (-not (Test-Path $MsiPath)) {
 if (Get-Command gh -ErrorAction SilentlyContinue) {
     Write-Host "==> Creating GitHub release with gh" -ForegroundColor Cyan
     gh release create "v$Version" `
-        --repo "$GitHubUser/Mezmer-Clipboard-Manager" `
-        --title "Mezmer Clipboard $Version" `
-        --notes "Windows installer for Mezmer Clipboard." `
+        --repo "$GitHubUser/Mezmerize" `
+        --title "Mezmerize $Version" `
+        --notes "Windows installer for Mezmerize." `
         $MsiPath
     Write-Host "Release published." -ForegroundColor Green
 } else {
     Write-Host ""
     Write-Host "GitHub CLI (gh) not found. Upload the MSI manually:" -ForegroundColor Yellow
-    Write-Host "  https://github.com/$GitHubUser/Mezmer-Clipboard-Manager/releases/new"
+    Write-Host "  https://github.com/$GitHubUser/Mezmerize/releases/new"
     Write-Host "  Tag: v$Version"
     Write-Host "  File: $MsiPath"
 }

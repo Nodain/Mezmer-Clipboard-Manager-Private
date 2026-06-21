@@ -117,7 +117,7 @@ pub fn copy_clip(
             let paths: Vec<String> = serde_json::from_str(&json).map_err(|e| e.to_string())?;
             #[cfg(windows)]
             {
-                copy_files_to_clipboard(&paths)?;
+                clipboard::copy_files_to_clipboard(&paths)?;
             }
             #[cfg(not(windows))]
             {
@@ -129,16 +129,6 @@ pub fn copy_clip(
     }
 
     Ok(CopyResult { ok: true })
-}
-
-#[cfg(windows)]
-fn copy_files_to_clipboard(paths: &[String]) -> Result<(), String> {
-    use clipboard_win::{formats, Clipboard, Setter};
-    let _clip = Clipboard::new_attempts(10).map_err(|e| e.to_string())?;
-    let refs: Vec<&str> = paths.iter().map(|s| s.as_str()).collect();
-    formats::FileList
-        .write_clipboard(refs.as_slice())
-        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -289,4 +279,27 @@ pub fn pick_screen_color(app: AppHandle, state: State<AppState>) -> CmdResult<Sa
     eyedropper::finish_eyedropper(&app, true)?;
     let _ = app.emit("colors-updated", &saved);
     Ok(saved)
+}
+
+#[tauri::command]
+pub fn copy_text(text: String) -> CmdResult<CopyResult> {
+    clipboard::suppress_next_capture();
+    let mut board = Clipboard::new().map_err(|e| e.to_string())?;
+    board.set_text(text).map_err(|e| e.to_string())?;
+    Ok(CopyResult { ok: true })
+}
+
+#[tauri::command]
+pub fn copy_image_url(url: String) -> CmdResult<CopyResult> {
+    clipboard::copy_gif_from_url(&url)?;
+    Ok(CopyResult { ok: true })
+}
+
+#[tauri::command]
+pub fn search_gifs(
+    api_key: String,
+    query: Option<String>,
+    limit: Option<u32>,
+) -> CmdResult<Vec<crate::gifs::GifItem>> {
+    crate::gifs::search_klipy(&api_key, query.as_deref(), limit.unwrap_or(24))
 }

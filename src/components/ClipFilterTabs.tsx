@@ -1,6 +1,7 @@
 import type { ClipFilterTab } from "../lib/clipFilter";
+import { supportsColorPicker } from "../lib/platform";
 
-const TABS: Array<{ id: ClipFilterTab; label: string }> = [
+const ALL_TABS: Array<{ id: ClipFilterTab; label: string }> = [
   { id: "pinned", label: "Pinned" },
   { id: "text", label: "Text" },
   { id: "image", label: "Images" },
@@ -18,12 +19,16 @@ export function ClipFilterTabs({
   onChange: (tab: ClipFilterTab) => void;
   variant?: "footer" | "header";
 }) {
+  const tabs = ALL_TABS.filter(
+    (tab) => tab.id !== "color" || supportsColorPicker(),
+  );
+
   return (
     <div
       className={`clipboard-tabs clipboard-tabs--${variant}`}
       data-no-drag
     >
-      {TABS.map((tab) => (
+      {tabs.map((tab) => (
         <button
           key={tab.id}
           type="button"

@@ -10,6 +10,7 @@ mod clipboard;
 mod commands;
 mod db;
 mod eyedropper;
+mod gifs;
 mod hotkey;
 mod mezmer;
 mod paths;
@@ -47,6 +48,7 @@ pub fn run() {
     }
 
     builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
+    builder = builder.plugin(tauri_plugin_opener::init());
 
     #[cfg(desktop)]
     {
@@ -116,6 +118,9 @@ pub fn run() {
             commands::start_eyedropper,
             commands::cancel_eyedropper,
             commands::pick_screen_color,
+            commands::copy_text,
+            commands::copy_image_url,
+            commands::search_gifs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -132,11 +137,11 @@ fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&show, &settings, &quit])?;
 
-    let icon = app.default_window_icon().cloned().unwrap();
+    let icon = tauri::include_image!("icons/tray-icon.png");
     let _tray = TrayIconBuilder::new()
         .icon(icon)
         .menu(&menu)
-        .tooltip("Mezmer Clipboard")
+        .tooltip("Mezmerize")
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => show_picker_window(app),
             "settings" => show_settings_window(app),

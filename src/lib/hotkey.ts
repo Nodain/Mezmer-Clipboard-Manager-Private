@@ -1,4 +1,12 @@
+import { isMac, isWindows } from "./platform";
+
+export function defaultPickerHotkey(): string {
+  return isMac() ? "super+shift+KeyV" : "control+shift+KeyV";
+}
+
+/** @deprecated use defaultPickerHotkey() */
 export const DEFAULT_PICKER_HOTKEY = "control+shift+KeyV";
+
 export const WIN_V_PICKER_HOTKEY = "super+KeyV";
 
 export function formatHotkey(hotkey: string): string {
@@ -18,7 +26,7 @@ function formatHotkeyPart(part: string): string {
     case "alt":
       return "Alt";
     case "super":
-      return "Win";
+      return isMac() ? "Cmd" : "Win";
     default:
       if (part.startsWith("Key")) return part.slice(3);
       if (part.startsWith("Digit")) return part.slice(5);
@@ -28,6 +36,7 @@ function formatHotkeyPart(part: string): string {
 }
 
 export function isWindowsClipboardHotkey(hotkey: string): boolean {
+  if (!isWindows()) return false;
   const parts = hotkey.split("+").filter(Boolean);
   const mods = parts.slice(0, -1).map((p) => p.toLowerCase());
   const key = parts[parts.length - 1];

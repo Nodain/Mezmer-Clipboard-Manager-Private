@@ -303,3 +303,44 @@ export function IconEyedropper({ size = 14, className }: IconProps) {
     </svg>
   );
 }
+
+export function IconEmoji({ size = 14, className }: IconProps) {
+  return (
+    <span
+      className={className}
+      aria-hidden="true"
+      style={{
+        fontSize: Math.round(size * 1.15),
+        lineHeight: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      😀
+    </span>
+  );
+}
+
+export function IconGif({ size = 14, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="9" y="3" width="12" height="12" rx="2" />
+      <rect x="3" y="9" width="12" height="12" rx="2" />
+      <path d="M6.5 13v4" />
+      <path d="M9 13v4" />
+      <path d="M11.5 13v4" />
+    </svg>
+  );
+}

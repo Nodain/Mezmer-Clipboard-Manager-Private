@@ -19,6 +19,11 @@ export interface ThemeSettings {
   border: string;
   viewBg: string;
   panel: string;
+  text: string;
+  muted: string;
+  faint: string;
+  input: string;
+  elevated: string;
 }
 
 export interface SavedColor {
@@ -29,6 +34,7 @@ export interface SavedColor {
   b: number;
   createdAt: string;
 }
+
 
 export interface AppSettings {
   maxHistory: number;
@@ -49,6 +55,14 @@ export interface AppSettings {
   pickerNavNextKey: string;
   pickerCopyKey: string;
   pickerCloseKey: string;
+  klipyApiKey: string;
+}
+
+export interface GifItem {
+  id: string;
+  title: string;
+  previewUrl: string;
+  url: string;
 }
 
 export const LIST_IMAGE_PREVIEW_HEIGHT_MIN = 80;

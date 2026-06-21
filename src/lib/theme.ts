@@ -11,6 +11,11 @@ export const DEFAULT_THEME: ThemeSettings = {
   border: "#262626",
   viewBg: "#141414",
   panel: "#1a1a1a",
+  text: "#ececec",
+  muted: "#8a8a8c",
+  faint: "#656568",
+  input: "#171717",
+  elevated: "#242424",
 };
 
 function parseHex(hex: string): [number, number, number] | null {
@@ -57,26 +62,33 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
 }
 
-export function sanitizeTheme(theme: ThemeSettings): ThemeSettings {
+function themeHex(value: string | undefined, fallback: string): string {
+  if (!value) return fallback;
+  return normalizeHex(value) ?? fallback;
+}
+
+export function sanitizeTheme(theme: Partial<ThemeSettings>): ThemeSettings {
   return {
-    accent: normalizeHex(theme.accent) ?? DEFAULT_THEME.accent,
-    border: normalizeHex(theme.border) ?? DEFAULT_THEME.border,
-    viewBg: normalizeHex(theme.viewBg) ?? DEFAULT_THEME.viewBg,
-    panel: normalizeHex(theme.panel) ?? DEFAULT_THEME.panel,
+    accent: themeHex(theme.accent, DEFAULT_THEME.accent),
+    border: themeHex(theme.border, DEFAULT_THEME.border),
+    viewBg: themeHex(theme.viewBg, DEFAULT_THEME.viewBg),
+    panel: themeHex(theme.panel, DEFAULT_THEME.panel),
+    text: themeHex(theme.text, DEFAULT_THEME.text),
+    muted: themeHex(theme.muted, DEFAULT_THEME.muted),
+    faint: themeHex(theme.faint, DEFAULT_THEME.faint),
+    input: themeHex(theme.input, DEFAULT_THEME.input),
+    elevated: themeHex(theme.elevated, DEFAULT_THEME.elevated),
   };
 }
 
-export function isDefaultTheme(theme: ThemeSettings): boolean {
+export function isDefaultTheme(theme: Partial<ThemeSettings>): boolean {
   const s = sanitizeTheme(theme);
-  return (
-    s.accent === DEFAULT_THEME.accent &&
-    s.border === DEFAULT_THEME.border &&
-    s.viewBg === DEFAULT_THEME.viewBg &&
-    s.panel === DEFAULT_THEME.panel
+  return (Object.keys(DEFAULT_THEME) as Array<keyof ThemeSettings>).every(
+    (key) => s[key] === DEFAULT_THEME[key],
   );
 }
 
-export function applyTheme(theme: ThemeSettings): void {
+export function applyTheme(theme: Partial<ThemeSettings>): void {
   const t = sanitizeTheme(theme);
   const root = document.documentElement;
 
@@ -84,12 +96,15 @@ export function applyTheme(theme: ThemeSettings): void {
   root.style.setProperty("--color-border", t.border);
   root.style.setProperty("--color-view-bg", t.viewBg);
   root.style.setProperty("--color-panel", t.panel);
+  root.style.setProperty("--color-text", t.text);
+  root.style.setProperty("--color-muted", t.muted);
+  root.style.setProperty("--color-faint", t.faint);
+  root.style.setProperty("--color-input", t.input);
+  root.style.setProperty("--color-elevated", t.elevated);
 
   root.style.setProperty("--color-border-soft", mixHex(t.border, t.viewBg, 0.35));
   root.style.setProperty("--color-border-faint", mixHex(t.border, t.viewBg, 0.55));
-  root.style.setProperty("--color-panel-2", lighten(t.panel, 0.04));
-  root.style.setProperty("--color-elevated", lighten(t.panel, 0.14));
-  root.style.setProperty("--color-input", darken(t.panel, 0.03));
+  root.style.setProperty("--color-panel-2", mixHex(t.panel, t.elevated, 0.45));
   root.style.setProperty("--color-bg", darken(t.viewBg, 0.03));
   root.style.setProperty("--color-sidebar", darken(t.panel, 0.02));
   root.style.setProperty("--color-accent-soft", mixHex(t.accent, t.viewBg, 0.82));

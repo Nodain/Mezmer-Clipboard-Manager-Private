@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { ClipFilterTabs } from "./components/ClipFilterTabs";
+import { EmojiPanel } from "./components/EmojiPanel";
+import { GifPanel } from "./components/GifPanel";
 import { PickerMainContent } from "./components/PickerMainContent";
-import { IconCheck, IconClose, IconSearch, IconSettings } from "./components/icons";
+import { IconCheck, IconClose, IconEmoji, IconGif, IconSearch, IconSettings } from "./components/icons";
 import { SaveToMezmerModal } from "./components/SaveToMezmerModal";
 import { Toast } from "./components/Toast";
 import { useAppTheme } from "./hooks/useAppTheme";
@@ -25,7 +27,38 @@ import {
 import { useStore } from "./lib/store";
 import { prefetchClipThumbs } from "./hooks/useClipThumb";
 import { pruneImageCache } from "./lib/imageCache";
-import type { AppSettings, CopyMode, SavedColor } from "./lib/types";
+import type { AppSettings, CopyMode, GifItem, SavedColor } from "./lib/types";
+
+type LibraryPanel = "emoji" | "gif" | null;
+
+function LibraryToolbarButtons({
+  libraryPanel,
+  onToggle,
+}: {
+  libraryPanel: LibraryPanel;
+  onToggle: (panel: Exclude<LibraryPanel, null>) => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => onToggle("emoji")}
+        className={`clipboard-icon-btn ${libraryPanel === "emoji" ? "clipboard-icon-btn--active" : ""}`}
+        title="Emojis"
+      >
+        <IconEmoji size={14} />
+      </button>
+      <button
+        type="button"
+        onClick={() => onToggle("gif")}
+        className={`clipboard-icon-btn ${libraryPanel === "gif" ? "clipboard-icon-btn--active" : ""}`}
+        title="GIF library"
+      >
+        <IconGif size={14} />
+      </button>
+    </>
+  );
+}
 
 export default function App() {
   const clips = useStore((s) => s.clips);
@@ -41,6 +74,7 @@ export default function App() {
   const setToast = useStore((s) => s.setToast);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedColorId, setSelectedColorId] = useState<number | null>(null);
+  const [libraryPanel, setLibraryPanel] = useState<LibraryPanel>(null);
   const [footerNotice, setFooterNotice] = useState<string | null>(null);
   const footerNoticeTimer = useRef<number>();
   const [loading, setLoading] = useState(true);
@@ -97,15 +131,6 @@ export default function App() {
     );
   }, [clipFilter, clips]);
 
-  useEffect(() => {
-    if (clipFilter !== "color") return;
-    setSelectedColorId((prev) =>
-      prev && savedColors.some((color) => color.id === prev)
-        ? prev
-        : (savedColors[0]?.id ?? null),
-    );
-  }, [clipFilter, savedColors]);
-
   const tabCounts = useMemo(
     () => ({
       pinned: tabClipCount(clips, "pinned"),
@@ -149,9 +174,9 @@ export default function App() {
   }, [bootstrap]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || libraryPanel != null) return;
     void refresh();
-  }, [refresh, loading]);
+  }, [refresh, loading, libraryPanel]);
 
   useEffect(() => {
     if (clipFilter !== "color") return;
@@ -182,7 +207,7 @@ export default function App() {
       );
       unsubs.push(
         await listen<string>("mezmer-import-failed", (event) => {
-          setToast(`Mezmer: ${event.payload}`);
+          setToast(`Mezmer Desktop: ${event.payload}`);
         }),
       );
       unsubs.push(
@@ -246,6 +271,7 @@ export default function App() {
 
   const handleClipFilterChange = useCallback(
     (tab: ClipFilterTab) => {
+      setLibraryPanel(null);
       setClipFilter(tab);
       const current = useStore.getState().settings;
       if (!current || current.lastClipFilter === tab) return;
@@ -255,6 +281,10 @@ export default function App() {
     },
     [setClipFilter, setSettings],
   );
+
+  useEffect(() => {
+    setLibraryPanel(null);
+  }, [carouselMode]);
 
   const copyColor = useCallback(
     async (id: number) => {
@@ -271,6 +301,40 @@ export default function App() {
     [settings?.keepPickerOpenOnCopy, showCopied],
   );
 
+  const copyEmoji = useCallback(
+    async (emoji: string) => {
+      try {
+        await api.copyText(emoji);
+        showCopied();
+        if (!settings?.keepPickerOpenOnCopy) {
+          await api.hidePicker();
+        }
+      } catch {
+        // silent
+      }
+    },
+    [settings?.keepPickerOpenOnCopy, showCopied],
+  );
+
+  const copyGif = useCallback(
+    async (gif: GifItem) => {
+      try {
+        await api.copyImageUrl(gif.url);
+        showCopied();
+        if (!settings?.keepPickerOpenOnCopy) {
+          await api.hidePicker();
+        }
+      } catch {
+        // silent
+      }
+    },
+    [settings?.keepPickerOpenOnCopy, showCopied],
+  );
+
+  const toggleLibraryPanel = useCallback((panel: Exclude<LibraryPanel, null>) => {
+    setLibraryPanel((prev) => (prev === panel ? null : panel));
+  }, []);
+
   useEffect(() => {
     const navPrev = settings?.pickerNavPrevKey ?? DEFAULT_NAV_PREV_KEY;
     const navNext = settings?.pickerNavNextKey ?? DEFAULT_NAV_NEXT_KEY;
@@ -283,11 +347,17 @@ export default function App() {
           setSaveModalClipId(null);
           return;
         }
+        if (libraryPanel != null) {
+          setLibraryPanel(null);
+          return;
+        }
         void api.hidePicker();
         return;
       }
 
       if (saveModalClipId != null || isTypingTarget(e.target)) return;
+
+      if (libraryPanel != null) return;
 
       if (clipFilter === "color" && savedColors.length > 0) {
         const idx = savedColors.findIndex((color) => color.id === selectedColorId);
@@ -334,6 +404,7 @@ export default function App() {
     clipFilter,
     filteredClips,
     savedColors,
+    libraryPanel,
     copySelected,
     copyColor,
     settings?.pickerNavPrevKey,
@@ -389,7 +460,13 @@ export default function App() {
               <IconSearch size={13} />
               <input
                 type="search"
-                placeholder="Search history…"
+                placeholder={
+                  libraryPanel === "gif"
+                    ? "Search Klipy GIFs…"
+                    : libraryPanel === "emoji"
+                      ? "Search emojis…"
+                      : "Search history…"
+                }
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="clipboard-search"
@@ -397,6 +474,12 @@ export default function App() {
               />
             </div>
             <div className="ml-auto flex shrink-0 items-center gap-0.5" data-no-drag>
+            {carouselMode ? (
+              <LibraryToolbarButtons
+                libraryPanel={libraryPanel}
+                onToggle={toggleLibraryPanel}
+              />
+            ) : null}
             <button
               type="button"
               onClick={() => void api.showSettings()}
@@ -433,6 +516,15 @@ export default function App() {
           carouselMode ? "clipboard-main--carousel" : "overflow-y-auto"
         }`}
       >
+        {libraryPanel === "emoji" ? (
+          <EmojiPanel query={search} onCopy={copyEmoji} />
+        ) : libraryPanel === "gif" ? (
+          <GifPanel
+            apiKey={settings.klipyApiKey ?? ""}
+            query={search}
+            onCopy={copyGif}
+          />
+        ) : (
         <PickerMainContent
           clipFilter={clipFilter}
           carouselMode={carouselMode}
@@ -459,6 +551,7 @@ export default function App() {
           onRefreshColors={() => void refreshColors()}
           onShowCopied={showCopied}
         />
+        )}
       </main>
 
       <footer className="clipboard-footer" data-no-drag>
@@ -520,6 +613,10 @@ export default function App() {
                   </span>
                   {footerNotice}
                 </span>
+              ) : libraryPanel === "gif" ? (
+                <span className="t-faint">Klipy GIFs</span>
+              ) : libraryPanel === "emoji" ? (
+                <span className="t-faint">Emojis</span>
               ) : (
                 <span className="t-faint">
                   {clipFilter === "color"
@@ -529,19 +626,25 @@ export default function App() {
                 </span>
               )}
             </span>
-            {clipFilter !== "color" ? (
-              <button
-                type="button"
-                onClick={async () => {
-                  await api.clearClips(true);
-                  void refresh();
-                  showFooterNotice("Cleared unpinned clips");
-                }}
-                className="text-[10px] font-medium t-muted transition hover:text-[var(--color-text)]"
-              >
-                Clear
-              </button>
-            ) : null}
+            <div className="flex shrink-0 items-center gap-1">
+              <LibraryToolbarButtons
+                libraryPanel={libraryPanel}
+                onToggle={toggleLibraryPanel}
+              />
+              {clipFilter !== "color" && libraryPanel == null ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await api.clearClips(true);
+                    void refresh();
+                    showFooterNotice("Cleared unpinned clips");
+                  }}
+                  className="text-[10px] font-medium t-muted transition hover:text-[var(--color-text)]"
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
           </div>
         )}
       </footer>

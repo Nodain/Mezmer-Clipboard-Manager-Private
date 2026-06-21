@@ -1,6 +1,6 @@
 use tauri::AppHandle;
 
-pub const AUTOSTART_APP_NAME: &str = "Mezmer Clipboard";
+pub const AUTOSTART_APP_NAME: &str = "Mezmerize";
 
 #[cfg(desktop)]
 pub fn apply_autostart(app: &AppHandle, enabled: bool) -> Result<(), String> {

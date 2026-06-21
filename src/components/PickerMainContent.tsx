@@ -1,6 +1,7 @@
 import type { ClipFilterTab } from "../lib/clipFilter";
 import type { ClipRecord, CopyMode, SavedColor } from "../lib/types";
 import { api } from "../lib/api";
+import { supportsColorPicker } from "../lib/platform";
 import { ColorCarousel } from "./ColorCarousel";
 import { ClipCarousel } from "./ClipCarousel";
 import { ClipboardEmpty } from "./ClipboardEmpty";
@@ -47,11 +48,11 @@ export function PickerMainContent({
   onRefreshColors: () => void;
   onShowCopied?: () => void;
 }) {
-  return (
-    <>
-      {clipFilter === "color" ? (
-        carouselMode ? (
-          <div className="flex h-full min-h-0 flex-1 flex-col gap-2">
+  if (clipFilter === "color") {
+    if (carouselMode) {
+      return (
+        <div className="flex h-full min-h-0 flex-1 flex-col gap-2">
+          {supportsColorPicker() ? (
             <div className="flex shrink-0 items-center gap-2 px-0.5">
               <button
                 type="button"
@@ -65,55 +66,65 @@ export function PickerMainContent({
                 Loupe follows cursor · Esc cancels
               </span>
             </div>
-            {savedColors.length === 0 ? (
-              <ClipboardEmpty title="No colors yet" className="flex-1" />
-            ) : (
-              <ColorCarousel
-                colors={savedColors}
-                selectedId={selectedColorId}
-                onSelect={onSelectColor}
-                onCopy={onCopyColor}
-              />
-            )}
-          </div>
-        ) : (
-          <ColorsPanel
-            colors={savedColors}
-            selectedId={selectedColorId}
-            onSelect={onSelectColor}
-            onRefresh={onRefreshColors}
-            onCopy={onShowCopied}
-          />
-        )
-      ) : filteredClips.length === 0 ? (
-        <ClipboardEmpty title={clipsEmptyTitle} hint={clipsEmptyHint} />
-      ) : carouselMode ? (
-        <ClipCarousel
-          clips={filteredClips}
-          selectedId={selectedId}
-          onSelect={onSelectClip}
-          onCopy={onCopyClip}
-          onPin={onPin}
-          onDelete={onDelete}
-        />
-      ) : (
-        <div className="space-y-0.5">
-          {filteredClips.map((clip) => (
-            <ClipItem
-              key={clip.id}
-              clip={clip}
-              selected={clip.id === selectedId}
-              mezmerEnabled={mezmerEnabled}
-              onCopy={() => onCopyClip(clip.id)}
-              onPin={() => void onPin(clip.id)}
-              onDelete={() => void onDelete(clip.id)}
-              onSaveToMezmer={
-                onSaveToMezmer ? () => onSaveToMezmer(clip.id) : undefined
-              }
+          ) : null}
+          {savedColors.length === 0 ? (
+            <ClipboardEmpty title="No colors yet" className="flex-1" />
+          ) : (
+            <ColorCarousel
+              colors={savedColors}
+              selectedId={selectedColorId}
+              onSelect={onSelectColor}
+              onCopy={onCopyColor}
             />
-          ))}
+          )}
         </div>
-      )}
-    </>
+      );
+    }
+
+    return (
+      <ColorsPanel
+        colors={savedColors}
+        selectedId={selectedColorId}
+        onSelect={onSelectColor}
+        onRefresh={onRefreshColors}
+        onCopy={onShowCopied}
+      />
+    );
+  }
+
+  if (filteredClips.length === 0) {
+    return <ClipboardEmpty title={clipsEmptyTitle} hint={clipsEmptyHint} />;
+  }
+
+  if (carouselMode) {
+    return (
+      <ClipCarousel
+        clips={filteredClips}
+        selectedId={selectedId}
+        onSelect={onSelectClip}
+        onCopy={onCopyClip}
+        onPin={onPin}
+        onDelete={onDelete}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-0.5">
+      {filteredClips.map((clip) => (
+        <ClipItem
+          key={clip.id}
+          clip={clip}
+          selected={clip.id === selectedId}
+          mezmerEnabled={mezmerEnabled}
+          onCopy={() => onCopyClip(clip.id)}
+          onPin={() => void onPin(clip.id)}
+          onDelete={() => void onDelete(clip.id)}
+          onSaveToMezmer={
+            onSaveToMezmer ? () => onSaveToMezmer(clip.id) : undefined
+          }
+        />
+      ))}
+    </div>
   );
 }

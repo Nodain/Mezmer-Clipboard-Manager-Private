@@ -1,7 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { applyTheme, DEFAULT_THEME, isDefaultTheme } from "../lib/theme";
 import type { AppSettings, ThemeSettings } from "../lib/types";
 import { ColorField } from "./ColorField";
+
+function ThemeSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-3">
+      <h4 className="px-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] t-faint">
+        {title}
+      </h4>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
 
 export function SettingsPersonalization({
   settings,
@@ -46,9 +63,9 @@ export function SettingsPersonalization({
   };
 
   return (
-    <div className="space-y-4 p-4" data-no-drag>
+    <div className="space-y-6 p-4" data-no-drag>
       <section>
-        <div className="mb-3 flex items-start justify-between gap-3 px-0.5">
+        <div className="mb-4 flex items-start justify-between gap-3 px-0.5">
           <div>
             <h3 className="text-[9px] font-semibold uppercase tracking-[0.12em] t-faint">
               Colors
@@ -67,35 +84,78 @@ export function SettingsPersonalization({
           </button>
         </div>
 
-        <div className="space-y-3">
-          <ColorField
-            label="Accent"
-            hint="Highlights, buttons, and selection glow"
-            value={theme.accent}
-            disabled={saving}
-            onChange={(accent) => updateTheme({ accent })}
-          />
-          <ColorField
-            label="Borders"
-            hint="Panel edges, inputs, and dividers"
-            value={theme.border}
-            disabled={saving}
-            onChange={(border) => updateTheme({ border })}
-          />
-          <ColorField
-            label="Background"
-            hint="Main clipboard window background"
-            value={theme.viewBg}
-            disabled={saving}
-            onChange={(viewBg) => updateTheme({ viewBg })}
-          />
-          <ColorField
-            label="Surface"
-            hint="Header, footer, and card surfaces"
-            value={theme.panel}
-            disabled={saving}
-            onChange={(panel) => updateTheme({ panel })}
-          />
+        <div className="space-y-5">
+          <ThemeSection title="Accent & borders">
+            <ColorField
+              label="Accent"
+              hint="Highlights, buttons, and selection glow"
+              value={theme.accent}
+              disabled={saving}
+              onChange={(accent) => updateTheme({ accent })}
+            />
+            <ColorField
+              label="Borders"
+              hint="Panel edges, inputs, and dividers"
+              value={theme.border}
+              disabled={saving}
+              onChange={(border) => updateTheme({ border })}
+            />
+          </ThemeSection>
+
+          <ThemeSection title="Surfaces">
+            <ColorField
+              label="Background"
+              hint="Main clipboard window background"
+              value={theme.viewBg}
+              disabled={saving}
+              onChange={(viewBg) => updateTheme({ viewBg })}
+            />
+            <ColorField
+              label="Surface"
+              hint="Header, footer, and card surfaces"
+              value={theme.panel}
+              disabled={saving}
+              onChange={(panel) => updateTheme({ panel })}
+            />
+            <ColorField
+              label="Input fields"
+              hint="Search bar and text inputs"
+              value={theme.input}
+              disabled={saving}
+              onChange={(input) => updateTheme({ input })}
+            />
+            <ColorField
+              label="Elevated"
+              hint="Hover states, tabs, and raised elements"
+              value={theme.elevated}
+              disabled={saving}
+              onChange={(elevated) => updateTheme({ elevated })}
+            />
+          </ThemeSection>
+
+          <ThemeSection title="Text">
+            <ColorField
+              label="Primary text"
+              hint="Main labels and clip content"
+              value={theme.text}
+              disabled={saving}
+              onChange={(text) => updateTheme({ text })}
+            />
+            <ColorField
+              label="Muted text"
+              hint="Secondary labels and descriptions"
+              value={theme.muted}
+              disabled={saving}
+              onChange={(muted) => updateTheme({ muted })}
+            />
+            <ColorField
+              label="Faint text"
+              hint="Hints, counts, and placeholders"
+              value={theme.faint}
+              disabled={saving}
+              onChange={(faint) => updateTheme({ faint })}
+            />
+          </ThemeSection>
         </div>
       </section>
     </div>

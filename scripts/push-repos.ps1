@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $ReleasePublic = Join-Path $ProjectRoot "release-public"
 $PrivateUrl = "https://github.com/$GitHubUser/Mezmer-Clipboard-Manager-Private.git"
-$PublicUrl = "https://github.com/$GitHubUser/Mezmer-Clipboard-Manager.git"
+$PublicUrl = "https://github.com/$GitHubUser/Mezmerize.git"
 $GitName = $GitHubUser
 $GitEmail = "$GitHubUser@users.noreply.github.com"
 
@@ -40,7 +40,7 @@ git remote set-url origin $PrivateUrl
 git add -A
 git diff --cached --quiet 2>$null
 if ($LASTEXITCODE -ne 0) {
-    git -c user.name=$GitName -c user.email=$GitEmail commit -m "Update Mezmer Clipboard"
+    git -c user.name=$GitName -c user.email=$GitEmail commit -m "Update Mezmerize"
 }
 git push -u origin main
 if ($LASTEXITCODE -ne 0) { throw "Private push failed. Create the private repo first: $PrivateUrl" }
@@ -63,4 +63,4 @@ if ($LASTEXITCODE -ne 0) { throw "Public push failed." }
 Write-Host "Public README pushed (no source)." -ForegroundColor Green
 Write-Host ""
 Write-Host "Upload installer (not git push):" -ForegroundColor Cyan
-Write-Host "  https://github.com/$GitHubUser/Mezmer-Clipboard-Manager/releases/new"
+Write-Host "  https://github.com/$GitHubUser/Mezmerize/releases/new"

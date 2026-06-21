@@ -103,6 +103,192 @@ pub fn suppress_next_capture() {
     IGNORE_NEXT.store(true, Ordering::SeqCst);
 }
 
+pub fn copy_gif_from_url(url: &str) -> Result<(), String> {
+    let bytes = download_url_bytes(url)?;
+    copy_gif_bytes(&bytes)
+}
+
+fn download_url_bytes(url: &str) -> Result<Vec<u8>, String> {
+    use std::io::Read;
+
+    let trimmed = url.trim();
+    if trimmed.is_empty() {
+        return Err("empty image url".into());
+    }
+
+    let response = ureq::get(trimmed)
+        .call()
+        .map_err(|e| e.to_string())?;
+    if !(200..300).contains(&response.status()) {
+        return Err(format!("download failed ({})", response.status()));
+    }
+
+    let mut bytes = Vec::new();
+    response
+        .into_reader()
+        .read_to_end(&mut bytes)
+        .map_err(|e| e.to_string())?;
+    Ok(bytes)
+}
+
+pub fn copy_gif_bytes(bytes: &[u8]) -> Result<(), String> {
+    suppress_next_capture();
+    if is_gif_bytes(bytes) {
+        copy_gif_platform(bytes)
+    } else {
+        copy_raster_image_bytes(bytes)
+    }
+}
+
+fn is_gif_bytes(bytes: &[u8]) -> bool {
+    bytes.len() >= 6 && bytes.starts_with(b"GIF")
+}
+
+fn write_temp_gif(bytes: &[u8]) -> Result<PathBuf, String> {
+    let dir = std::env::temp_dir().join("mezmerize-clipboard");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!(
+        "clip-{}.gif",
+        chrono::Local::now().format("%Y%m%d-%H%M%S-%f")
+    ));
+    std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    Ok(path.canonicalize().unwrap_or(path))
+}
+
+fn copy_gif_platform(bytes: &[u8]) -> Result<(), String> {
+    let path = write_temp_gif(bytes)?;
+    let path_str = path.to_string_lossy().into_owned();
+
+    #[cfg(windows)]
+    {
+        copy_files_to_clipboard(&[path_str])?;
+        return Ok(());
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        copy_gif_macos(&path)?;
+        return Ok(());
+    }
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        copy_gif_linux(bytes, &path)?;
+        return Ok(());
+    }
+
+    #[cfg(not(any(windows, target_os = "macos", unix)))]
+    {
+        let _ = path_str;
+        Err("GIF clipboard copy is not supported on this platform".into())
+    }
+}
+
+#[cfg(windows)]
+pub fn copy_files_to_clipboard(paths: &[String]) -> Result<(), String> {
+    use clipboard_win::{formats, Clipboard, Setter};
+    let _clip = Clipboard::new_attempts(10).map_err(|e| e.to_string())?;
+    let refs: Vec<&str> = paths.iter().map(|s| s.as_str()).collect();
+    formats::FileList
+        .write_clipboard(refs.as_slice())
+        .map_err(|e| e.to_string())
+}
+
+#[cfg(target_os = "macos")]
+fn copy_gif_macos(path: &Path) -> Result<(), String> {
+    use std::process::Command;
+
+    let path_str = path.to_string_lossy().replace('\\', "\\\\").replace('"', "\\\"");
+    let script = format!(
+        "set the clipboard to (read (POSIX file \"{path_str}\") as «class GIFf»)"
+    );
+    let status = Command::new("osascript")
+        .args(["-e", &script])
+        .status()
+        .map_err(|e| e.to_string())?;
+    if status.success() {
+        return Ok(());
+    }
+
+    let script = format!("set the clipboard to (POSIX file \"{path_str}\")");
+    let status = Command::new("osascript")
+        .args(["-e", &script])
+        .status()
+        .map_err(|e| e.to_string())?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err("failed to copy GIF to clipboard".into())
+    }
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
+fn copy_gif_linux(bytes: &[u8], path: &Path) -> Result<(), String> {
+    use std::io::Write;
+    use std::process::{Command, Stdio};
+
+    if Command::new("wl-copy")
+        .arg("--type")
+        .arg("image/gif")
+        .stdin(Stdio::piped())
+        .spawn()
+        .and_then(|mut child| {
+            if let Some(stdin) = child.stdin.as_mut() {
+                stdin.write_all(bytes)?;
+            }
+            child.wait()
+        })
+        .map(|status| status.success())
+        .unwrap_or(false)
+    {
+        return Ok(());
+    }
+
+    if Command::new("xclip")
+        .args(["-selection", "clipboard", "-t", "image/gif", "-i"])
+        .arg(path)
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false)
+    {
+        return Ok(());
+    }
+
+    let uri = format!("file://{}", path.display());
+    if Command::new("xclip")
+        .args(["-selection", "clipboard", "-t", "text/uri-list"])
+        .stdin(Stdio::piped())
+        .spawn()
+        .and_then(|mut child| {
+            if let Some(stdin) = child.stdin.as_mut() {
+                stdin.write_all(uri.as_bytes())?;
+            }
+            child.wait()
+        })
+        .map(|status| status.success())
+        .unwrap_or(false)
+    {
+        return Ok(());
+    }
+
+    Err("GIF clipboard copy requires wl-copy or xclip".into())
+}
+
+fn copy_raster_image_bytes(bytes: &[u8]) -> Result<(), String> {
+    let img = image::load_from_memory(bytes).map_err(|e| e.to_string())?;
+    let rgba = img.to_rgba8();
+    let (w, h) = rgba.dimensions();
+    let mut board = Clipboard::new().map_err(|e| e.to_string())?;
+    board
+        .set_image(ImageData {
+            width: w as usize,
+            height: h as usize,
+            bytes: rgba.into_raw().into(),
+        })
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 fn read_clipboard(clipboard: &mut Clipboard) -> Option<CapturedClip> {
     if let Some(files) = read_file_list() {
         if !files.is_empty() {

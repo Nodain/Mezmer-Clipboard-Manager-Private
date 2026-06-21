@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { checkMezmerHealth, flattenFolders, listMezmerFolders, MEZMER_BASE } from "../lib/mezmer";
+import { KLIPY_API_DOCS_URL } from "../lib/constants";
 import { formatHotkey } from "../lib/hotkey";
 import {
   DEFAULT_CLOSE_KEY,
@@ -42,6 +44,8 @@ export function SettingsGeneral({
   const [listImagePreviewHeight, setListImagePreviewHeight] = useState(
     settings.listImagePreviewHeight,
   );
+  const [klipyApiKey, setKlipyApiKey] = useState(settings.klipyApiKey);
+  const [klipySaving, setKlipySaving] = useState(false);
 
   useEffect(() => {
     setMaxHistory(settings.maxHistory);
@@ -50,6 +54,10 @@ export function SettingsGeneral({
   useEffect(() => {
     setListImagePreviewHeight(settings.listImagePreviewHeight);
   }, [settings.listImagePreviewHeight]);
+
+  useEffect(() => {
+    setKlipyApiKey(settings.klipyApiKey);
+  }, [settings.klipyApiKey]);
 
   useEffect(() => {
     if (!settings.mezmerPairingEnabled) {
@@ -250,14 +258,75 @@ export function SettingsGeneral({
 
       <section>
         <h3 className="mb-2 px-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] t-faint">
-          Mezmer pairing
+          Klipy GIF library
+        </h3>
+        <p className="mb-3 px-0.5 text-[11px] leading-relaxed t-muted">
+          Search GIFs from the clipboard picker. Get a free API key from the Klipy
+          partner panel.
+        </p>
+        <label className="block px-0.5">
+          <span className="mb-1.5 block text-[11px] t-muted">Klipy API key</span>
+          <input
+            type="password"
+            value={klipyApiKey}
+            disabled={saving || klipySaving}
+            onChange={(e) => setKlipyApiKey(e.target.value)}
+            placeholder="Paste your Klipy API key"
+            className="w-full px-2.5 py-1.5 text-sm"
+          />
+        </label>
+        <div className="mt-3 flex flex-wrap items-center gap-2 px-0.5">
+          <button
+            type="button"
+            disabled={
+              saving ||
+              klipySaving ||
+              klipyApiKey.trim() === settings.klipyApiKey.trim()
+            }
+            onClick={() => {
+              setKlipySaving(true);
+              void onSave({ klipyApiKey: klipyApiKey.trim() }).finally(() =>
+                setKlipySaving(false),
+              );
+            }}
+            className="rounded-[var(--mezmer-radius-sm)] bg-[var(--color-accent)] px-3 py-1.5 text-[11px] font-medium text-white disabled:opacity-50"
+          >
+            {klipySaving ? "Saving…" : "Save key"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void openUrl(KLIPY_API_DOCS_URL)}
+            className="text-[11px] text-[var(--color-accent)] underline-offset-2 hover:underline"
+          >
+            Get a Klipy API key
+          </button>
+          {settings.klipyApiKey.trim() ? (
+            <button
+              type="button"
+              disabled={saving || klipySaving}
+              onClick={() => {
+                setKlipyApiKey("");
+                setKlipySaving(true);
+                void onSave({ klipyApiKey: "" }).finally(() => setKlipySaving(false));
+              }}
+              className="text-[11px] t-muted transition hover:text-[var(--color-text)]"
+            >
+              Remove key
+            </button>
+          ) : null}
+        </div>
+      </section>
+
+      <section>
+        <h3 className="mb-2 px-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] t-faint">
+          Mezmer Desktop pairing
         </h3>
         <Toggle
           on={settings.mezmerPairingEnabled}
           disabled={saving}
           onChange={(on) => void onSave({ mezmerPairingEnabled: on })}
-          title="Connect to Mezmer"
-          desc="Automatically send copied images and URLs to your Mezmer library"
+          title="Connect to Mezmer Desktop"
+          desc="Automatically send copied images and URLs to your Mezmer Desktop library"
         />
 
         {settings.mezmerPairingEnabled ? (
@@ -276,12 +345,12 @@ export function SettingsGeneral({
                 {mezmerChecking
                   ? "Checking…"
                   : connected
-                    ? `Connected · Mezmer ${mezmerHealth?.version}`
+                    ? `Connected · Mezmer Desktop ${mezmerHealth?.version}`
                     : "Disconnected"}
               </span>
             </div>
             <p className="mt-2 text-[11px] leading-relaxed t-muted">
-              Requires Mezmer running with{" "}
+              Requires Mezmer Desktop running with{" "}
               <span className="t-text">Settings → Extension</span> enabled.
               Bridge at <span className="t-text">{MEZMER_BASE}</span>.
             </p>
@@ -319,7 +388,7 @@ export function SettingsGeneral({
                 <p className="mt-1 text-[10px] text-red-400">{mezmerFoldersError}</p>
               ) : !connected ? (
                 <p className="mt-1 text-[10px] t-faint">
-                  Connect to Mezmer to choose a folder.
+                  Connect to Mezmer Desktop to choose a folder.
                 </p>
               ) : null}
             </label>

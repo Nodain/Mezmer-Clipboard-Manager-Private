@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AppSettings, ClipRecord, CopyMode, SavedColor } from "./types";
+import type { AppSettings, ClipRecord, CopyMode, GifItem, SavedColor } from "./types";
 
 export const api = {
   listClips: (search?: string, limit?: number) =>
@@ -42,4 +42,12 @@ export const api = {
   cancelEyedropper: () => invoke<void>("cancel_eyedropper"),
 
   pickScreenColor: () => invoke<SavedColor>("pick_screen_color"),
+
+  copyText: (text: string) => invoke<{ ok: boolean }>("copy_text", { text }),
+
+  copyImageUrl: (url: string) =>
+    invoke<{ ok: boolean }>("copy_image_url", { url }),
+
+  searchGifs: (apiKey: string, query?: string, limit?: number) =>
+    invoke<GifItem[]>("search_gifs", { apiKey, query, limit }),
 };

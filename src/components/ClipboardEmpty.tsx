@@ -1,3 +1,5 @@
+import { AppLogo } from "./AppLogo";
+
 export function ClipboardEmpty({
   title,
   hint,
@@ -10,12 +12,7 @@ export function ClipboardEmpty({
   return (
     <div className={`clipboard-empty ${className}`.trim()}>
       <div className="clipboard-empty-icon" aria-hidden="true">
-        <img
-          src="/mezmer-mark.png"
-          alt=""
-          className="clipboard-empty-mark"
-          draggable={false}
-        />
+        <AppLogo size={48} className="clipboard-empty-mark" />
       </div>
       <p className="clipboard-empty-title">{title}</p>
       {hint ? <p className="clipboard-empty-hint">{hint}</p> : null}

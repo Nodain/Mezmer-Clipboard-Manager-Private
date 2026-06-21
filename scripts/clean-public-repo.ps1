@@ -3,7 +3,7 @@
 #
 # Usage:
 #   .\scripts\clean-public-repo.ps1 -GitHubUser "Nodain"
-#   .\scripts\clean-public-repo.ps1 -GitHubUser "Nodain" -PublicRepo "Mezmer-Clipboard-Manager"
+#   .\scripts\clean-public-repo.ps1 -GitHubUser "Nodain" -PublicRepo "Mezmerize"
 #
 # Before running:
 #   1. Create a PRIVATE repo for source (e.g. Mezmer-Clipboard-Manager-Private) on GitHub.
@@ -12,7 +12,7 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$GitHubUser,
-    [string]$PublicRepo = "Mezmer-Clipboard-Manager",
+    [string]$PublicRepo = "Mezmerize",
     [string]$PrivateRepo = "Mezmer-Clipboard-Manager-Private",
     [switch]$PushPrivate,
     [switch]$ForcePublicClean
@@ -63,21 +63,21 @@ if (-not $PushPrivate -and -not $ForcePublicClean) {
 
 Set-Location $ProjectRoot
 
-# Stop tracking internal docs if still committed
-Push-Location $ProjectRoot
-try {
-    & $GitExe rm --cached -f clipboard_manager.md 2>$null
-} finally {
-    Pop-Location
-}
-Invoke-Git -Args @("add", ".gitignore") -WorkDir $ProjectRoot
-Invoke-Git -Args @("diff", "--cached", "--quiet") -WorkDir $ProjectRoot
-if ($LASTEXITCODE -ne 0) {
-    Invoke-Git -Args @(
-        "-c", "user.name=$GitName",
-        "-c", "user.email=$GitEmail",
-        "commit", "-m", "Stop tracking internal design docs"
-    ) -WorkDir $ProjectRoot
+# Stop tracking internal docs if still committed (skip if already untracked)
+if ($PushPrivate) {
+    $tracked = & $GitExe -C $ProjectRoot ls-files -- clipboard_manager.md
+    if ($tracked) {
+        Invoke-Git -Args @("rm", "--cached", "-f", "clipboard_manager.md") -WorkDir $ProjectRoot
+        Invoke-Git -Args @("add", ".gitignore") -WorkDir $ProjectRoot
+        Invoke-Git -Args @("diff", "--cached", "--quiet") -WorkDir $ProjectRoot
+        if ($LASTEXITCODE -ne 0) {
+            Invoke-Git -Args @(
+                "-c", "user.name=$GitName",
+                "-c", "user.email=$GitEmail",
+                "commit", "-m", "Stop tracking internal design docs"
+            ) -WorkDir $ProjectRoot
+        }
+    }
 }
 
 if ($PushPrivate) {

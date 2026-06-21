@@ -55,14 +55,14 @@ fn post_import(body: Value) -> Result<(), String> {
     let response = ureq::post(&format!("{MEZMER_BASE}/api/import"))
         .set("Content-Type", "application/json")
         .send_string(&payload)
-        .map_err(|err| format!("Mezmer is not reachable ({err})"))?;
+        .map_err(|err| format!("Mezmer Desktop is not reachable ({err})"))?;
 
     if response.status() >= 400 {
         let message = response
             .into_string()
             .ok()
             .and_then(parse_error_message)
-            .unwrap_or_else(|| "Mezmer import failed".to_string());
+            .unwrap_or_else(|| "Mezmer Desktop import failed".to_string());
         return Err(message);
     }
 

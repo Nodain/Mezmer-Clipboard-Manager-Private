@@ -1,9 +1,10 @@
 import { memo, useEffect, useRef } from "react";
 import { useClipThumb } from "../hooks/useClipThumb";
+import { usePinnedDeleteConfirm } from "../hooks/usePinnedDeleteConfirm";
 import type { ClipRecord } from "../lib/types";
+import { AppLogo } from "./AppLogo";
 import {
   IconImage,
-  IconMezmer,
   IconPin,
   IconTrash,
 } from "./icons";
@@ -45,6 +46,40 @@ function ClipItemInner({
   const isImage = clip.kind === "image";
   const rowRef = useRef<HTMLDivElement | null>(null);
   const thumb = useClipThumb(clip.id, isImage);
+  const { confirming, requestDelete, cancelDelete } = usePinnedDeleteConfirm(
+    clip.id,
+    clip.pinned,
+    onDelete,
+  );
+
+  const metaBar = confirming ? (
+    <span className="clipboard-delete-confirm-label">Are You Sure?</span>
+  ) : (
+    <>
+      <span className="clipboard-kind">{clip.kind}</span>
+      {clip.pinned ? (
+        <span className="text-[9px] font-medium text-[var(--color-accent)]">
+          Pinned
+        </span>
+      ) : null}
+    </>
+  );
+
+  const rowClassName = [
+    isImage ? "clipboard-row clipboard-row--image group" : "clipboard-row group",
+    selected ? "clipboard-row--selected" : "",
+    confirming ? "clipboard-row--delete-confirm" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const handleRowClick = () => {
+    if (confirming) {
+      cancelDelete();
+      return;
+    }
+    onCopy();
+  };
 
   useEffect(() => {
     if (selected) {
@@ -60,14 +95,14 @@ function ClipItemInner({
       {showMezmer ? (
         <button
           type="button"
-          title="Save to Mezmer"
+          title="Save to Mezmer Desktop"
           onClick={(e) => {
             e.stopPropagation();
             onSaveToMezmer?.();
           }}
           className="clipboard-action-btn clipboard-action-btn--accent"
         >
-          <IconMezmer size={13} />
+          <AppLogo size={14} />
         </button>
       ) : null}
       <button
@@ -75,6 +110,7 @@ function ClipItemInner({
         title="Pin"
         onClick={(e) => {
           e.stopPropagation();
+          cancelDelete();
           onPin();
         }}
         className="clipboard-action-btn"
@@ -83,12 +119,12 @@ function ClipItemInner({
       </button>
       <button
         type="button"
-        title="Delete"
+        title={confirming ? "Confirm delete" : "Delete"}
         onClick={(e) => {
           e.stopPropagation();
-          onDelete();
+          requestDelete();
         }}
-        className="clipboard-action-btn"
+        className={`clipboard-action-btn${confirming ? " clipboard-action-btn--delete-confirm" : ""}`}
       >
         <IconTrash size={13} />
       </button>
@@ -100,8 +136,8 @@ function ClipItemInner({
       <div
         ref={rowRef}
         data-no-drag
-        onClick={onCopy}
-        className={`clipboard-row clipboard-row--image group ${selected ? "clipboard-row--selected" : ""}`}
+        onClick={handleRowClick}
+        className={rowClassName}
       >
         <div className="clipboard-row-image-preview">
           {thumb ? (
@@ -120,14 +156,7 @@ function ClipItemInner({
                 {formatTime(clip.createdAt)}
               </span>
             </div>
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className="clipboard-kind">{clip.kind}</span>
-              {clip.pinned ? (
-                <span className="text-[9px] font-medium text-[var(--color-accent)]">
-                  Pinned
-                </span>
-              ) : null}
-            </div>
+            <div className="mt-1 flex items-center gap-1.5">{metaBar}</div>
           </div>
           {actions}
         </div>
@@ -139,8 +168,8 @@ function ClipItemInner({
     <div
       ref={rowRef}
       data-no-drag
-      onClick={onCopy}
-      className={`clipboard-row group ${selected ? "clipboard-row--selected" : ""}`}
+      onClick={handleRowClick}
+      className={rowClassName}
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -151,14 +180,7 @@ function ClipItemInner({
             {formatTime(clip.createdAt)}
           </span>
         </div>
-        <div className="mt-1 flex items-center gap-1.5">
-          <span className="clipboard-kind">{clip.kind}</span>
-          {clip.pinned ? (
-            <span className="text-[9px] font-medium text-[var(--color-accent)]">
-              Pinned
-            </span>
-          ) : null}
-        </div>
+        <div className="mt-1 flex items-center gap-1.5">{metaBar}</div>
       </div>
 
       {actions}

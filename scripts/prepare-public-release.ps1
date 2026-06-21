@@ -13,7 +13,7 @@ $TauriConf = Get-Content (Join-Path $ProjectRoot "src-tauri\tauri.conf.json") -R
 $Version = $TauriConf.version
 $ProductName = $TauriConf.productName
 
-Write-Host "Building Mezmer Clipboard v$Version (this may take several minutes)..." -ForegroundColor Cyan
+Write-Host "Building Mezmerize v$Version (this may take several minutes)..." -ForegroundColor Cyan
 npm run tauri build
 if ($LASTEXITCODE -ne 0) {
     throw "Build failed."
@@ -30,7 +30,7 @@ if (-not $MsiFile) {
 }
 
 New-Item -ItemType Directory -Force -Path $ArtifactsDir | Out-Null
-$DestName = "Mezmer-Clipboard-$Version-x64.msi"
+$DestName = "Mezmerize-$Version-x64.msi"
 $DestPath = Join-Path $ArtifactsDir $DestName
 Copy-Item -Path $MsiFile.FullName -Destination $DestPath -Force
 

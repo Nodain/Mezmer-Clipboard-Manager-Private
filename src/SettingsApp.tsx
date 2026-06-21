@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { AppLogo } from "./components/AppLogo";
 import { SettingsContent } from "./components/SettingsContent";
 import { IconClose } from "./components/icons";
 import { useAppTheme } from "./hooks/useAppTheme";
@@ -62,9 +63,12 @@ export default function SettingsApp() {
             onPointerDown={beginWindowDrag}
           />
           <div className="clipboard-header-toolbar flex w-full items-center justify-between gap-2 px-3 py-2.5">
-            <h2 className="text-[13px] font-semibold tracking-tight t-text">
-              Settings
-            </h2>
+            <div className="flex items-center gap-2">
+              <AppLogo size={20} className="clipboard-header-mark" />
+              <h2 className="text-[13px] font-semibold tracking-tight t-text">
+                Mezmerize
+              </h2>
+            </div>
             <button
               type="button"
               data-no-drag

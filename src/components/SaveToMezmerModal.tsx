@@ -1,3 +1,4 @@
+import { AppLogo } from "./AppLogo";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import {
@@ -90,7 +91,7 @@ export function SaveToMezmerModal({
           ...folder,
         });
       }
-      setToast("Saved to Mezmer");
+      setToast("Saved to Mezmer Desktop");
       onClose();
     } catch (e) {
       setError(String(e));
@@ -111,14 +112,9 @@ export function SaveToMezmerModal({
       >
         <div className="border-b border-[var(--color-border-soft)] px-4 py-3">
           <div className="flex items-center gap-2">
-            <img
-              src="/mezmer-mark.png"
-              alt=""
-              className="h-4 w-4 opacity-90"
-              draggable={false}
-            />
+            <AppLogo size={20} />
             <h2 className="text-[13px] font-semibold tracking-tight t-text">
-              Save to Mezmer
+              Save to Mezmer Desktop
             </h2>
           </div>
           <p className="mt-1 truncate text-[11px] t-muted">
@@ -129,7 +125,7 @@ export function SaveToMezmerModal({
         <div className="space-y-3 p-4" data-no-drag>
           {!canImport ? (
             <p className="text-[12px] t-muted">
-              Only image and URL clips can be sent to Mezmer in v1.
+              Only image and URL clips can be sent to Mezmer Desktop in v1.
             </p>
           ) : loading ? (
             <p className="text-[12px] t-muted">Loading folders…</p>
